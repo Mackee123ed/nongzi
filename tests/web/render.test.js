@@ -252,6 +252,46 @@ describe('帮助页面与文档保持同步', () => {
   });
 });
 
+/**
+ * 「新增」提交体的组装。
+ *
+ * 由真实的线上故障而来：在营品种 / 待营品种共用同一个 /varieties 接口，靠 kind
+ * 区分，而 kind 由页面决定、**不在表单里**。新增时若只提交表单字段，后端就收不到
+ * kind，用户把该填的都填了仍会被拦下，提示「品种类别不能为空」。
+ */
+describe('新增提交体 buildCreatePayload — 页面上下文参数必须带上', () => {
+  test('★ 在营品种页新增时带上 kind=active（曾被漏发，报「品种类别不能为空」）', async () => {
+    const { buildCreatePayload } = await import('../../src/web/js/pages.js');
+    const { RESOURCES } = await import('../../src/web/js/resources.js');
+
+    const payload = buildCreatePayload(RESOURCES['variety-active'], {
+      code: 'NZ001', name: '农子1号', nature: 'own', unitPrice: '120.00',
+    });
+    assert.equal(payload.kind, 'active', 'kind 必须由页面补上，表单里没有这个字段');
+    assert.equal(payload.code, 'NZ001', '表单字段要原样保留');
+  });
+
+  test('★ 待营品种页新增时带上 kind=pending', async () => {
+    const { buildCreatePayload } = await import('../../src/web/js/pages.js');
+    const { RESOURCES } = await import('../../src/web/js/resources.js');
+
+    const payload = buildCreatePayload(RESOURCES['variety-pending'], { code: 'D001', name: '待营甲' });
+    assert.equal(payload.kind, 'pending');
+  });
+
+  test('表单值与上下文参数同名时，以用户填写的为准', () => {
+    return import('../../src/web/js/pages.js').then(({ buildCreatePayload }) => {
+      const payload = buildCreatePayload({ path: '/x', listParams: { kind: 'active' } }, { kind: 'pending' });
+      assert.equal(payload.kind, 'pending');
+    });
+  });
+
+  test('没有上下文参数的资源，提交体就是表单值本身', async () => {
+    const { buildCreatePayload } = await import('../../src/web/js/pages.js');
+    assert.deepEqual(buildCreatePayload({ path: '/x' }, { code: 'A' }), { code: 'A' });
+  });
+});
+
 describe('reports / resources 描述表自洽性', () => {
   test('每条报表都声明了接口路径与列', async () => {
     const { REPORTS } = await import('../../src/web/js/reports.js');

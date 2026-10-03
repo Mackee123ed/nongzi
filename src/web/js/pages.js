@@ -96,6 +96,20 @@ function readFormValues(fields, inputs) {
   return values;
 }
 
+/**
+ * 组装「新增」的提交体。
+ *
+ * 有些资源是**按类别分页**的：在营品种与待营品种共用同一个 `/varieties` 接口，
+ * 靠 `kind` 区分，而 `kind` 由页面决定、**不在表单里**。这类页面上下文参数记在
+ * `resource.listParams` 上，新增时必须一并提交，否则后端收不到 `kind` ——
+ * 表现就是用户把该填的都填了，仍被拦下并提示「品种类别不能为空」。
+ *
+ * 同名时以表单值为准（用户填的优先于页面上下文）。
+ */
+export function buildCreatePayload(resource, values) {
+  return { ...(resource.listParams ?? {}), ...values };
+}
+
 /* ---------------- 通用主数据页 ---------------- */
 
 export function makeEntityPage(resourceKey) {
@@ -118,7 +132,7 @@ export function makeEntityPage(resourceKey) {
         onSubmit: async () => {
           const values = readFormValues(resource.fields, form.inputs);
           if (row) await api.put(`${resource.path}/${row.id}`, values);
-          else await api.post(resource.path, values);
+          else await api.post(resource.path, buildCreatePayload(resource, values));
           toast(row ? '已保存' : '已新增');
           clearLookupCache();
           await reload();

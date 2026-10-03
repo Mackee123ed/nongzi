@@ -1,6 +1,6 @@
 {
   "name": "nongzi-finance",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "北京农子财务系统 — 种子经营企业本地业务管理系统（库存/财务/销售/客户/员工 + 三级权限）",
   "private": true,
   "type": "module",

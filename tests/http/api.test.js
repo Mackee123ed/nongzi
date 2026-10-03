@@ -316,6 +316,47 @@ describe('HTTP API 端到端', () => {
     });
   });
 
+  /**
+   * 前端页面组装的请求体，必须真的能被后端接受。
+   *
+   * 这条测试补的是一个真实漏洞：在营 / 待营品种共用 /api/varieties，靠 kind 区分，
+   * 而 kind 由页面决定、不在表单里。此前页面新增时只发表单字段，用户把该填的都填了
+   * 仍被后端拦下，提示「品种类别不能为空」——接口测试却因为都显式传了 kind 而全绿。
+   * 所以这里刻意**用页面自己的组装函数**产出请求体，再打真实接口。
+   */
+  describe('新增品种：页面组装的请求体后端必须接受', () => {
+    test('★ 在营品种（表单里没有 kind，页面必须补上）', async () => {
+      const { buildCreatePayload } = await import('../../src/web/js/pages.js');
+      const { RESOURCES } = await import('../../src/web/js/resources.js');
+
+      // 用户在「在营品种」表单里实际能填的字段
+      const values = {
+        code: 'UI001', name: '界面录入品种', nature: 'own', unitPrice: '88.00',
+        nationalApprovalNo: '国审2026001', suitableTempZone: '第一积温带',
+        promoRegion: '黑龙江', packSpec: '20kg/袋', features: '抗倒伏',
+      };
+      const payload = buildCreatePayload(RESOURCES['variety-active'], values);
+      assert.equal(payload.kind, 'active', 'kind 必须由页面上下文补上');
+
+      const res = await server.api.post('/api/varieties', payload, tokens.boss);
+      assert.equal(res.status, 200, `后端应接受页面组装的请求体：${JSON.stringify(res.body)}`);
+
+      const list = await server.api.get('/api/varieties?kind=active', tokens.boss);
+      assert.ok(list.data.some((v) => v.code === 'UI001'), '新增的品种应出现在在营列表里');
+    });
+
+    test('★ 待营品种同理', async () => {
+      const { buildCreatePayload } = await import('../../src/web/js/pages.js');
+      const { RESOURCES } = await import('../../src/web/js/resources.js');
+
+      const payload = buildCreatePayload(RESOURCES['variety-pending'], {
+        code: 'UI002', name: '界面录入待营品种', expectedApprovalYear: 2027, pilotPackSpec: '5kg/袋',
+      });
+      const res = await server.api.post('/api/varieties', payload, tokens.boss);
+      assert.equal(res.status, 200, JSON.stringify(res.body));
+    });
+  });
+
   describe('帮助页面所需的文档资源', () => {
     test('使用说明以 Markdown 形式可取到', async () => {
       const response = await fetch(`${server.base}/docs/${encodeURIComponent('使用说明.md')}`);
