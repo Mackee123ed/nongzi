@@ -1,0 +1,28 @@
+{
+  "name": "nongzi-finance",
+  "version": "1.1.0",
+  "description": "北京农子财务系统 — 种子经营企业本地业务管理系统（库存/财务/销售/客户/员工 + 三级权限）",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
+    "test:domain": "node --test \"tests/domain/**/*.test.js\"",
+    "test:db": "node --test \"tests/db/**/*.test.js\"",
+    "test:service": "node --test \"tests/service/**/*.test.js\"",
+    "test:reports": "node --test \"tests/reports/**/*.test.js\"",
+    "test:http": "node --test \"tests/http/**/*.test.js\"",
+    "test:watch": "node --test --watch \"tests/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"tests/**/*.test.js\""
+  },
+  "optionalDependencies": {
+    "mysql2": "^3.11.0",
+    "pg": "^8.13.0",
+    "mssql": "^11.0.0"
+  }
+}
